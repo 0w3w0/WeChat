@@ -1,6 +1,1 @@
-﻿  pch.cpp
-E:\c++\WeChat\WeChatHook\pch.cpp(26,18): warning C4477: “sprintf_s”: 格式字符串“%s”需要类型“char *”的参数，但可变参数 1 拥有了类型“DWORD”
-E:\c++\WeChat\WeChatHook\pch.cpp(31,19): warning C4477: “sprintf_s”: 格式字符串“%s”需要类型“char *”的参数，但可变参数 1 拥有了类型“DWORD”
-E:\c++\WeChat\WeChatHook\pch.cpp(37,18): warning C4477: “sprintf_s”: 格式字符串“%s”需要类型“char *”的参数，但可变参数 1 拥有了类型“DWORD”
-  dllmain.cpp
-  WeChatHook.vcxproj -> E:\c++\WeChat\Debug\WeChatHook.dll
+﻿  WeChatHook.vcxproj -> E:\c++\WeChat\Debug\WeChatHook.dll

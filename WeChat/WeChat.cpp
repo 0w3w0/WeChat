@@ -18,6 +18,7 @@ INT_PTR CALLBACK Dlgproc(
 
 DWORD GetProcessID(const char* ProcessName);
 void InjectDLL(DWORD pid);
+BOOL UnInjectDll(DWORD dwPID, LPCTSTR szDllPath);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -49,13 +50,14 @@ INT_PTR CALLBACK Dlgproc(HWND hwnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
 		if (wparam == INJECT_DLL)
 		{
 			DWORD pid = GetProcessID("WeChat.exe");
-			
+
 			InjectDLL(pid);
 		}
 
 		if (wparam == UN_DLL)
 		{
-
+			DWORD pid = GetProcessID("WeChat.exe");
+			UnInjectDll(pid, L"E:\\c++\\WeChat\\Debug\\WeChatHook.dll");
 		}
 	}
 
@@ -137,4 +139,72 @@ void InjectDLL(DWORD pid)
 	{
 		return;
 	}
+}
+
+//让指定的进程卸载相应的模块
+//dwPID         目标进程的PID
+//szDllPath     被注入的dll的完整路径,注意：路径不要用“/”来代替“\\”
+BOOL UnInjectDll(DWORD dwPID, LPCTSTR szDllPath)
+{
+	BOOL                    bMore = FALSE, bFound = FALSE, bRet = FALSE;
+	HANDLE                  hSnapshot = INVALID_HANDLE_VALUE;
+	HANDLE                  hProcess = NULL;
+	MODULEENTRY32           me = { sizeof(me), };
+	LPTHREAD_START_ROUTINE  pThreadProc = NULL;
+	HMODULE                 hMod = NULL;
+	TCHAR                   szProcName[MAX_PATH] = { 0, };
+	if (INVALID_HANDLE_VALUE == (hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, dwPID)))
+	{
+		_tprintf(L"EjectDll() : CreateToolhelp32Snapshot(%d) failed!!! [%d]\n",
+			dwPID, GetLastError());
+		goto EJECTDLL_EXIT;
+	}
+	bMore = Module32First(hSnapshot, &me);
+	for (; bMore; bMore = Module32Next(hSnapshot, &me))//查找模块句柄
+	{
+		if (!_tcsicmp(me.szModule, szDllPath) ||
+			!_tcsicmp(me.szExePath, szDllPath))
+		{
+			bFound = TRUE;
+			break;
+		}
+	}
+	if (!bFound)
+	{
+		_tprintf(L"EjectDll() : There is not %s module in process(%d) memory!!!\n",
+			szDllPath, dwPID);
+		goto EJECTDLL_EXIT;
+	}
+	if (!(hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPID)))
+	{
+		_tprintf(L"EjectDll() : OpenProcess(%d) failed!!! [%d]\n",
+			dwPID, GetLastError());
+		goto EJECTDLL_EXIT;
+	}
+	hMod = GetModuleHandle(L"kernel32.dll");
+	if (hMod == NULL)
+	{
+		_tprintf(L"EjectDll() : GetModuleHandle(\"kernel32.dll\") failed!!! [%d]\n",
+			GetLastError());
+		goto EJECTDLL_EXIT;
+	}
+	pThreadProc = (LPTHREAD_START_ROUTINE)GetProcAddress(hMod, "FreeLibrary");
+	if (pThreadProc == NULL)
+	{
+		_tprintf(L"EjectDll() : GetProcAddress(\"FreeLibrary\") failed!!! [%d]\n",
+			GetLastError());
+		goto EJECTDLL_EXIT;
+	}
+	if (!CreateRemoteThread(hProcess, NULL, 0, pThreadProc, me.modBaseAddr, 0, NULL))
+	{
+		_tprintf(L"EjectDll() : MyCreateRemoteThread() failed!!!\n");
+		goto EJECTDLL_EXIT;
+	}
+	bRet = TRUE;
+EJECTDLL_EXIT:
+	if (hProcess)
+		CloseHandle(hProcess);
+	if (hSnapshot != INVALID_HANDLE_VALUE)
+		CloseHandle(hSnapshot);
+	return bRet;
 }

@@ -39,6 +39,8 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 INT_PTR CALLBACK Dlgproc(HWND hwnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
 {
+	wchar_t wxid[0x100] = { 0 };
+	wchar_t msg[0x100] = { 0 };
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
@@ -48,6 +50,12 @@ INT_PTR CALLBACK Dlgproc(HWND hwnd, UINT uMsg, WPARAM wparam, LPARAM lparam)
 		if (wparam == READ_INFO)
 		{
 
+		}
+		if (wparam == S_BTN)
+		{
+			GetDlgItemText(hwnd, S_WXID, wxid, sizeof(wxid));
+			GetDlgItemText(hwnd, S_MSG, msg, sizeof(msg));
+			SendTextMessage(wxid, msg);
 		}
 		break;
 	case WM_CLOSE:

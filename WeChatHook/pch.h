@@ -9,5 +9,7 @@
 
 // 添加要在此处预编译的标头
 #include "framework.h"
+
 void readWeChatInfo(HWND hwnd);
+void SendTextMessage(wchar_t* id, wchar_t* message);
 #endif //PCH_H
